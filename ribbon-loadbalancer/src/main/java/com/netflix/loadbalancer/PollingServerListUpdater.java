@@ -19,6 +19,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * (refactored and moved here from {@link com.netflix.loadbalancer.DynamicServerListLoadBalancer})
  *
  * @author David Liu
+ *
+ *
+ * serverList 更新器
  */
 public class PollingServerListUpdater implements ServerListUpdater {
 
@@ -91,15 +94,21 @@ public class PollingServerListUpdater implements ServerListUpdater {
         this(LISTOFSERVERS_CACHE_UPDATE_DELAY, LISTOFSERVERS_CACHE_REPEAT_INTERVAL);
     }
 
+
+
+
+
     public PollingServerListUpdater(IClientConfig clientConfig) {
+
+        /// 1s                                  默认是30s
         this(LISTOFSERVERS_CACHE_UPDATE_DELAY, getRefreshIntervalMs(clientConfig));
     }
 
     public PollingServerListUpdater(final long initialDelayMs, final long refreshIntervalMs) {
-        this.initialDelayMs = initialDelayMs;
-        this.refreshIntervalMs = refreshIntervalMs;
+        this.initialDelayMs = initialDelayMs;// 初始化延迟1s
+        this.refreshIntervalMs = refreshIntervalMs;  /// 刷新间隔30s
     }
-
+    // 启动更新器
     @Override
     public synchronized void start(final UpdateAction updateAction) {
         if (isActive.compareAndSet(false, true)) {
@@ -113,6 +122,8 @@ public class PollingServerListUpdater implements ServerListUpdater {
                         return;
                     }
                     try {
+
+                        /// 进行更新
                         updateAction.doUpdate();
                         lastUpdated = System.currentTimeMillis();
                     } catch (Exception e) {
@@ -121,6 +132,9 @@ public class PollingServerListUpdater implements ServerListUpdater {
                 }
             };
 
+
+
+            // 定时任务 ，然后每30s执行一次
             scheduledFuture = getRefreshExecutor().scheduleWithFixedDelay(
                     wrapperRunnable,
                     initialDelayMs,

@@ -57,8 +57,13 @@ public class DynamicServerListLoadBalancer<T extends Server> extends BaseLoadBal
     volatile ServerListFilter<T> filter;
 
     protected final ServerListUpdater.UpdateAction updateAction = new ServerListUpdater.UpdateAction() {
+
+
+        /// 进行更新 ， 这里是updater调用的
         @Override
         public void doUpdate() {
+
+            /// 更新serverList
             updateListOfServers();
         }
     };
@@ -85,9 +90,13 @@ public class DynamicServerListLoadBalancer<T extends Server> extends BaseLoadBal
     public DynamicServerListLoadBalancer(IClientConfig clientConfig, IRule rule, IPing ping,
                                          ServerList<T> serverList, ServerListFilter<T> filter,
                                          ServerListUpdater serverListUpdater) {
+
+        //调用父类
         super(clientConfig, rule, ping);
         this.serverListImpl = serverList;
         this.filter = filter;
+
+        // 这个玩意就是更新serverList的
         this.serverListUpdater = serverListUpdater;
         if (filter instanceof AbstractServerListFilter) {
             ((AbstractServerListFilter) filter).setLoadBalancerStats(getLoadBalancerStats());
@@ -139,8 +148,10 @@ public class DynamicServerListLoadBalancer<T extends Server> extends BaseLoadBal
         boolean primeConnection = this.isEnablePrimingConnections();
         // turn this off to avoid duplicated asynchronous priming done in BaseLoadBalancer.setServerList()
         this.setEnablePrimingConnections(false);
-        enableAndInitLearnNewServersFeature();
 
+        // 启动更新serverList 的定时任务
+        enableAndInitLearnNewServersFeature();
+        // 更新serverList
         updateListOfServers();
         if (primeConnection && this.getPrimeConnections() != null) {
             this.getPrimeConnections()
@@ -220,6 +231,8 @@ public class DynamicServerListLoadBalancer<T extends Server> extends BaseLoadBal
      */
     public void enableAndInitLearnNewServersFeature() {
         LOGGER.info("Using serverListUpdater {}", serverListUpdater.getClass().getSimpleName());
+
+        // 启动serverListUpdater
         serverListUpdater.start(updateAction);
     }
 
@@ -232,15 +245,18 @@ public class DynamicServerListLoadBalancer<T extends Server> extends BaseLoadBal
             serverListUpdater.stop();
         }
     }
-
+    // 更新serverList
     @VisibleForTesting
     public void updateListOfServers() {
         List<T> servers = new ArrayList<T>();
         if (serverListImpl != null) {
+
+            // 调用 serverListImpl 来更新serverList
             servers = serverListImpl.getUpdatedListOfServers();
             LOGGER.debug("List of Servers for {} obtained from Discovery client: {}",
                     getIdentifier(), servers);
 
+            // 过滤
             if (filter != null) {
                 servers = filter.getFilteredListOfServers(servers);
                 LOGGER.debug("Filtered List of Servers for {} obtained from Discovery client: {}",

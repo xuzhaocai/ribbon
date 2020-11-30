@@ -122,7 +122,9 @@ public abstract class AbstractServerPredicate implements Predicate<PredicateKey>
     }
  
     /**
-     * Get servers filtered by this predicate from list of servers. 
+     * Get servers filtered by this predicate from list of servers.
+     *
+     * 获取符合条件的servers
      */
     public List<Server> getEligibleServers(List<Server> servers, Object loadBalancerKey) {
         if (loadBalancerKey == null) {
@@ -144,11 +146,19 @@ public abstract class AbstractServerPredicate implements Predicate<PredicateKey>
      *
      * @param modulo The modulo to bound the value of the counter.
      * @return The next value.
+     *
+     * RoundRobin 算法实现 就是轮询算法
+     * modulo  就是数组的大小
      */
     private int incrementAndGetModulo(int modulo) {
         for (;;) {
+
+            //0             1     0
             int current = nextIndex.get();
+            // 1%2  = 1     0     1
             int next = (current + 1) % modulo;
+
+            // nextIndex=1  0     1
             if (nextIndex.compareAndSet(current, next) && current < modulo)
                 return current;
         }
@@ -191,16 +201,26 @@ public abstract class AbstractServerPredicate implements Predicate<PredicateKey>
         }
         return Optional.of(eligible.get(random.nextInt(eligible.size())));
     }
+
+
+
     
     /**
+     *
+     * 使用RoundRobin 算法进行选择
      * Choose a server in a round robin fashion after the predicate filters a given list of servers and load balancer key. 
      */
     public Optional<Server> chooseRoundRobinAfterFiltering(List<Server> servers, Object loadBalancerKey) {
+
+        // 获取符合条件的servers
         List<Server> eligible = getEligibleServers(servers, loadBalancerKey);
         if (eligible.size() == 0) {
             return Optional.absent();
         }
-        return Optional.of(eligible.get(incrementAndGetModulo(eligible.size())));
+        //RoundRobin  算法 轮询算法
+        int i = incrementAndGetModulo(eligible.size());
+
+        return Optional.of(eligible.get(i));
     }
         
     /**

@@ -160,17 +160,28 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
     }
 
     public BaseLoadBalancer(IClientConfig config, IRule rule, IPing ping) {
+
+        // 初始化
         initWithConfig(config, rule, ping);
     }
     
     void initWithConfig(IClientConfig clientConfig, IRule rule, IPing ping) {
         this.config = clientConfig;
+
+
         String clientName = clientConfig.getClientName();
-        this.name = clientName;
+        this.name = clientName;// 这个就是你服务名
+
+
+        /// ping 的时间间隔
         int pingIntervalTime = Integer.parseInt(""
                 + clientConfig.getProperty(
                         CommonClientConfigKey.NFLoadBalancerPingInterval,
                         Integer.parseInt("30")));
+
+
+
+        // 最大总的ping时间
         int maxTotalPingTime = Integer.parseInt(""
                 + clientConfig.getProperty(
                         CommonClientConfigKey.NFLoadBalancerMaxTotalPingTime,
@@ -184,21 +195,31 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
         // LB, these are your Ping and Rule guys ...
         setRule(rule);
         setPing(ping);
+
+
         setLoadBalancerStats(new LoadBalancerStats(clientName));
+
+        /// 往rule 里面设置了 loadbalancer
         rule.setLoadBalancer(this);
         if (ping instanceof AbstractLoadBalancerPing) {
             ((AbstractLoadBalancerPing) ping).setLoadBalancer(this);
         }
         logger.info("Client: {} instantiated a LoadBalancer: {}", name, this);
+
+        /// 默认是false
         boolean enablePrimeConnections = clientConfig.get(
                 CommonClientConfigKey.EnablePrimeConnections, DefaultClientConfigImpl.DEFAULT_ENABLE_PRIME_CONNECTIONS);
-
+        // 是否开启主要连接
         if (enablePrimeConnections) {
             this.setEnablePrimingConnections(true);
+
+            // 创建主要连接
             PrimeConnections primeConnections = new PrimeConnections(
                     this.getName(), clientConfig);
             this.setPrimeConnections(primeConnections);
         }
+
+        //初始化动作
         init();
 
     }
@@ -714,25 +735,30 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
             }
         }
     }
-
+    //创建一个counter
     private final Counter createCounter() {
         return Monitors.newCounter("LoadBalancer_ChooseServer");
     }
 
     /*
      * Get the alive server dedicated to key
-     * 
+     *
+     *
+     * 选择server
      * @return the dedicated server
      */
     public Server chooseServer(Object key) {
         if (counter == null) {
             counter = createCounter();
         }
+        // 自增长
         counter.increment();
         if (rule == null) {
             return null;
         } else {
             try {
+
+                /// 使用IRule进行选择 选择
                 return rule.choose(key);
             } catch (Exception e) {
                 logger.warn("LoadBalancer [{}]:  Error choosing server for key {}", name, key, e);

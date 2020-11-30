@@ -104,12 +104,21 @@ public class ZoneAwareLoadBalancer<T extends Server> extends DynamicServerListLo
                 existingLBEntry.getValue().setServersList(Collections.emptyList());
             }
         }
-    }    
-        
+    }
+
+    /**
+     * 进行选择
+     * @param key
+     * @return
+     */
     @Override
     public Server chooseServer(Object key) {
+
+        // 如果只有一个zone的化
         if (!ENABLED.get() || getLoadBalancerStats().getAvailableZones().size() <= 1) {
             logger.debug("Zone aware logic disabled or there is only one zone");
+
+            // 走父类的
             return super.chooseServer(key);
         }
         Server server = null;

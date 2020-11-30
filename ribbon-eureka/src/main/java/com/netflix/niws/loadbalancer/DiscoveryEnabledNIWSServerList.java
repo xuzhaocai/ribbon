@@ -147,6 +147,11 @@ public class DiscoveryEnabledNIWSServerList extends AbstractServerList<Discovery
         return obtainServersViaDiscovery();
     }
 
+
+    /**
+     * 更新serverlList
+     * @return
+     */
     @Override
     public List<DiscoveryEnabledServer> getUpdatedListOfServers(){
         return obtainServersViaDiscovery();
@@ -154,18 +159,22 @@ public class DiscoveryEnabledNIWSServerList extends AbstractServerList<Discovery
 
     private List<DiscoveryEnabledServer> obtainServersViaDiscovery() {
         List<DiscoveryEnabledServer> serverList = new ArrayList<DiscoveryEnabledServer>();
-
+        // 判断eureka client provider
         if (eurekaClientProvider == null || eurekaClientProvider.get() == null) {
             logger.warn("EurekaClient has not been initialized yet, returning an empty list");
             return new ArrayList<DiscoveryEnabledServer>();
         }
-
+        // 获取eureka client 对象
         EurekaClient eurekaClient = eurekaClientProvider.get();
         if (vipAddresses!=null){
             for (String vipAddress : vipAddresses.split(",")) {
+
+                // 遍历InstanceInfo 集合
                 // if targetRegion is null, it will be interpreted as the same region of client
                 List<InstanceInfo> listOfInstanceInfo = eurekaClient.getInstancesByVipAddress(vipAddress, isSecure, targetRegion);
                 for (InstanceInfo ii : listOfInstanceInfo) {
+
+                    // 找出状态是up的
                     if (ii.getStatus().equals(InstanceStatus.UP)) {
 
                         if(shouldUseOverridePort){
